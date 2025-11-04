@@ -3,492 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocalLoop Resource Exchange App</title>
-    <!-- Load Tailwind CSS -->
+    <title>Real-Time Currency Converter</title>
+    <!-- Load Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use Inter font -->
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        /* Use Inter as the default font */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f9fc;
         }
-        .text-loop-green { color: #10B981; }
-        .bg-loop-green { background-color: #10B981; }
-        .hover-loop-green:hover { background-color: #059669; }
-        .shadow-loop { box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05); }
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
+        /* Simple spinner for loading state */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-    <!-- Header -->
-    <header class="bg-white shadow-md sticky top-0 z-10">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-gray-800">
-                <span class="text-loop-green">Local</span>Loop
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">
+            Currency Converter
+        </h1>
+
+        <!-- Main Form -->
+        <form id="converter-form" class="space-y-6">
+            
+            <!-- Amount -->
+            <div>
+                <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                <input type="number" id="amount" name="amount" value="1" min="0" step="any"
+                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       placeholder="Enter amount"
+                       required>
             </div>
-            <div class="text-sm text-gray-500 flex items-center">
-                <span class="mr-2 hidden sm:inline">Your User ID:</span>
-                <span id="user-id-display" class="font-mono text-gray-700 bg-gray-100 p-1 rounded text-xs break-all">...Loading User...</span>
-            </div>
-        </nav>
-    </header>
 
-    <!-- Main Application Content -->
-    <main class="flex-grow py-12">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-2">Resource Library</h1>
-            <p class="text-xl text-center text-gray-600 mb-10">Lend out items and see what your neighbors have available to borrow in real-time.</p>
-
-            <!-- Loading/Error Status -->
-            <div id="status-message" class="text-center p-3 mb-6 hidden rounded-lg"></div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- From/To Row -->
+            <div class="flex items-center space-x-4">
                 
-                <!-- Left Column: Resource Form & Pending Requests (1/3 width) -->
-                <div class="lg:col-span-1 space-y-8">
-                    <!-- Resource Submission Form -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-2 border-loop-green/50">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                             <!-- Resource Icon SVG -->
-                            <svg class="w-6 h-6 text-loop-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37h.001z"></path></svg>
-                            Offer an Item
-                        </h2>
-                        <form id="resource-form" onsubmit="saveResource(event)">
-                            <div class="mb-4">
-                                <label for="item-name" class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-                                <input type="text" id="item-name" required placeholder="e.g., Heavy-Duty Pressure Washer" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-loop-green focus:border-loop-green">
-                            </div>
-                            <div class="mb-4">
-                                <label for="loan-duration" class="block text-sm font-medium text-gray-700 mb-1">Max Loan Days</label>
-                                <input type="number" id="loan-duration" required min="1" value="3" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-loop-green focus:border-loop-green">
-                            </div>
-                            <div class="mb-4">
-                                <label for="item-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea id="item-description" rows="3" required placeholder="Condition, location, and any special instructions." class="w-full p-2 border border-gray-300 rounded-lg focus:ring-loop-green focus:border-loop-green"></textarea>
-                            </div>
-                            <button type="submit" class="w-full bg-loop-green text-white px-4 py-2 rounded-xl font-bold hover-loop-green transition duration-150 shadow-md">
-                                List Item for Lending
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- NEW: Lender Requests Panel -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-2 border-indigo-500/50">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center text-indigo-800">
-                            <!-- Inbox Icon SVG -->
-                            <svg class="w-6 h-6 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 4v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4"></path></svg>
-                            Pending Loan Requests
-                        </h2>
-                        <div id="pending-requests-list" class="space-y-3">
-                            <div id="no-requests-state" class="text-center text-sm text-gray-500 p-4">No pending requests.</div>
-                            <!-- Requests will be injected here -->
-                        </div>
-                    </div>
+                <!-- From Currency -->
+                <div class="w-2/5">
+                    <label for="from-currency" class="block text-sm font-medium text-gray-700">From</label>
+                    <select id="from-currency" name="from-currency"
+                            class="mt-1 block w-full py-3 px-4 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <!-- Options will be populated by JS -->
+                        <option value="USD">USD</option>
+                    </select>
                 </div>
 
-                <!-- Right Column: Resource List Display (2/3 width) -->
-                <div class="lg:col-span-2">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                        <svg class="w-6 h-6 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                        Available Resources
-                    </h2>
-                    <div id="resources-list" class="space-y-4">
-                        <!-- Resources will be injected here -->
-                        <div class="text-center text-gray-500 p-8 bg-white rounded-xl shadow-inner" id="empty-state">
-                            Loading resources or waiting for the first item to be listed...
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-            &copy; 2025 LocalLoop Community Hub. All rights reserved.
-        </div>
-    </footer>
-
-    <!-- Loan Request MODAL/CUSTOM DIALOG -->
-    <div id="loan-request-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-md transform transition-all duration-300 scale-100">
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">Request Loan</h3>
-            <p class="text-gray-600 mb-4">You are requesting to borrow: <span id="modal-item-name" class="font-semibold text-loop-green"></span></p>
-
-            <form id="loan-request-form" onsubmit="submitLoanRequest(event)">
-                <input type="hidden" id="modal-resource-id">
-                <input type="hidden" id="modal-lender-id">
-                <input type="hidden" id="modal-max-days">
-
-                <div class="mb-6">
-                    <label for="requested-days" class="block text-sm font-medium text-gray-700 mb-1">How many days do you need the item?</label>
-                    <input type="number" id="requested-days" required min="1" max="3" value="1" 
-                           class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg">
-                    <p id="modal-max-days-info" class="text-xs text-gray-500 mt-1">Maximum allowed: 3 days.</p>
-                </div>
-                
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeRequestModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition">
-                        Cancel
-                    </button>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition">
-                        Submit Request
+                <!-- Swap Button -->
+                <div class="w-1/5 flex justify-center pt-6">
+                    <button type="button" id="swap-button"
+                            class="p-2 text-gray-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-full transition-transform duration-200 hover:rotate-180">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-4 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
                     </button>
                 </div>
-            </form>
+
+                <!-- To Currency -->
+                <div class="w-2/5">
+                    <label for="to-currency" class="block text-sm font-medium text-gray-700">To</label>
+                    <select id="to-currency" name="to-currency"
+                            class="mt-1 block w-full py-3 px-4 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <!-- Options will be populated by JS -->
+                        <option value="EUR">EUR</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Convert Button -->
+            <div>
+                <button type="submit" id="convert-button"
+                        class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                    <span id="button-text">Convert</span>
+                    <div id="loading-spinner" class="spinner hidden ml-3"></div>
+                </button>
+            </div>
+        </form>
+
+        <!-- Result Display -->
+        <div id="result-container" class="mt-6 text-center min-h-[3rem]">
+            <p id="result-message" class="text-2xl font-semibold text-gray-900"></p>
+            <p id="error-message" class="text-lg font-medium text-red-600"></p>
         </div>
+        
+        <!-- Last Updated Timestamp -->
+        <p id="last-updated" class="text-center text-sm text-gray-500 mt-4"></p>
+
     </div>
 
-    <!-- Firebase Initialization and Application Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // NOTE: Added doc, updateDoc, and where for lender request management
-        import { getFirestore, collection, addDoc, onSnapshot, query, setLogLevel, serverTimestamp, doc, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const amountInput = document.getElementById('amount');
+            const fromSelect = document.getElementById('from-currency');
+            const toSelect = document.getElementById('to-currency');
+            const swapButton = document.getElementById('swap-button');
+            const converterForm = document.getElementById('converter-form');
+            const convertButton = document.getElementById('convert-button');
+            const buttonText = document.getElementById('button-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const resultMessage = document.getElementById('result-message');
+            const errorMessage = document.getElementById('error-message');
+            const lastUpdatedElement = document.getElementById('last-updated');
 
-        // --- Firebase Global Variables (MANDATORY) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            // Use a free API that doesn't require a key
+            const API_URL = 'https://api.exchangerate.host/latest';
 
-        let db;
-        let auth;
-        let userId = null;
-        let isAuthReady = false;
-        
-        // Log level for debugging
-        setLogLevel('Debug');
+            // Store rates to avoid re-fetching for every conversion
+            let allRates = {};
 
-        // DOM Elements
-        const userIdDisplay = document.getElementById('user-id-display');
-        const resourcesList = document.getElementById('resources-list');
-        const statusMessage = document.getElementById('status-message');
-        const emptyState = document.getElementById('empty-state');
-        const loanRequestModal = document.getElementById('loan-request-modal');
-        const requestedDaysInput = document.getElementById('requested-days');
-        const modalMaxDaysInfo = document.getElementById('modal-max-days-info');
-        const pendingRequestsList = document.getElementById('pending-requests-list');
-        const noRequestsState = document.getElementById('no-requests-state');
+            /**
+             * Fetches the list of currencies and populates the dropdowns.
+             */
+            async function fetchAndPopulateCurrencies() {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error('Failed to fetch currency list (Network error).');
+                    
+                    const data = await response.json();
 
-        // Helper to display status messages
-        function showStatus(message, isError = false) {
-            statusMessage.textContent = message;
-            statusMessage.className = `text-center p-3 mb-6 rounded-lg ${isError ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`;
-            statusMessage.classList.remove('hidden');
-        }
-
-        // 1. Firebase Initialization and Authentication
-        async function initFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Authentication
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                // Auth state listener
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        isAuthReady = true;
-                        showStatus("App initialized and connected to LocalLoop Hub.", false);
-                        loadResources(); // Start loading data after auth is ready
-                        loadLoanRequests(); // NEW: Start loading loan requests
-                    } else {
-                        // This case should ideally not happen after the initial sign-in attempt
-                        userIdDisplay.textContent = 'Unauthenticated';
-                        isAuthReady = false;
-                        showStatus("Authentication failed.", true);
+                    // Add a check for the API's own success flag
+                    if (data.success === false) {
+                        throw new Error(data.error?.message || 'API returned an error.');
                     }
-                });
-            } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                userIdDisplay.textContent = 'Error!';
-                showStatus(`Initialization failed: ${error.message}`, true);
-            }
-        }
 
-        // 2. Firestore Collection Paths
-        function getResourceCollectionRef() {
-            // Public data path: /artifacts/{appId}/public/data/resources
-            if (!db) throw new Error("Firestore not initialized.");
-            return collection(db, 'artifacts', appId, 'public', 'data', 'resources');
-        }
+                    // Add a check to ensure data.rates is a valid object
+                    if (!data.rates || typeof data.rates !== 'object') {
+                        throw new Error('Invalid data structure received from API.');
+                    }
 
-        function getLoanRequestCollectionRef() {
-             // Public data path: /artifacts/{appId}/public/data/loanRequests
-            if (!db) throw new Error("Firestore not initialized.");
-            return collection(db, 'artifacts', appId, 'public', 'data', 'loanRequests');
-        }
+                    allRates = data.rates; // Store rates based on default (EUR)
+                    
+                    const currencies = Object.keys(allRates);
+                    
+                    // Clear placeholder options
+                    fromSelect.innerHTML = '';
+                    toSelect.innerHTML = '';
 
-        // 3. Save Resource Function (Called by Form)
-        window.saveResource = async function(event) {
-            event.preventDefault();
-            if (!isAuthReady) {
-                showStatus("Please wait for the app to connect...", true);
-                return;
-            }
-
-            const itemName = document.getElementById('item-name').value;
-            const loanDuration = parseInt(document.getElementById('loan-duration').value);
-            const itemDescription = document.getElementById('item-description').value;
-
-            if (!itemName || isNaN(loanDuration) || loanDuration <= 0 || !itemDescription) {
-                showStatus("Please fill out all fields correctly.", true);
-                return;
-            }
-
-            const newResource = {
-                itemName,
-                loanDuration,
-                itemDescription,
-                lenderId: userId,
-                lenderShortId: userId.substring(0, 8),
-                isAvailable: true,
-                createdAt: serverTimestamp()
-            };
-
-            try {
-                await addDoc(getResourceCollectionRef(), newResource);
-                showStatus(`Item "${itemName}" successfully listed!`, false);
-                document.getElementById('resource-form').reset();
-            } catch (error) {
-                console.error("Error adding document: ", error);
-                showStatus(`Error listing resource: ${error.message}`, true);
-            }
-        }
-
-        // 4. Loan Request Functions (Borrower Modal Logic)
-        window.openRequestModal = function(resourceId, itemName, lenderId, maxDays) {
-            if (lenderId === userId) {
-                showStatus("You cannot request a loan for your own item.", true);
-                return;
-            }
-
-            // Populate hidden fields
-            document.getElementById('modal-resource-id').value = resourceId;
-            document.getElementById('modal-lender-id').value = lenderId;
-            document.getElementById('modal-max-days').value = maxDays;
-
-            // Populate visible fields and info
-            document.getElementById('modal-item-name').textContent = itemName;
-            requestedDaysInput.setAttribute('max', maxDays);
-            requestedDaysInput.value = 1; // Reset to 1 day default
-            modalMaxDaysInfo.textContent = `Maximum allowed: ${maxDays} days.`;
-
-            // Show modal
-            loanRequestModal.classList.remove('hidden');
-        }
-
-        window.closeRequestModal = function() {
-            loanRequestModal.classList.add('hidden');
-        }
-        
-        window.submitLoanRequest = async function(event) {
-            event.preventDefault();
-            if (!isAuthReady) {
-                showStatus("App not ready to submit request.", true);
-                return;
-            }
-
-            const resourceId = document.getElementById('modal-resource-id').value;
-            const lenderId = document.getElementById('modal-lender-id').value;
-            const maxDays = parseInt(document.getElementById('modal-max-days').value);
-            const requestedDays = parseInt(requestedDaysInput.value);
-            const itemName = document.getElementById('modal-item-name').textContent;
-
-            if (isNaN(requestedDays) || requestedDays < 1 || requestedDays > maxDays) {
-                showStatus(`Please request a valid duration between 1 and ${maxDays} days.`, true);
-                return;
-            }
-
-            const newLoanRequest = {
-                resourceId,
-                itemName,
-                lenderId,
-                requesterId: userId,
-                requestedDays,
-                status: 'pending', // pending, approved, rejected, completed
-                requestedAt: serverTimestamp()
-            };
-
-            try {
-                await addDoc(getLoanRequestCollectionRef(), newLoanRequest);
-                showStatus(`Loan request for "${itemName}" sent successfully! The lender will be notified.`, false);
-                closeRequestModal();
-            } catch (error) {
-                console.error("Error submitting loan request: ", error);
-                showStatus(`Error submitting request: ${error.message}`, true);
-            }
-        }
-        
-        // 5. Loan Request Management Functions (Lender Logic)
-        function loadLoanRequests() {
-            if (!isAuthReady || !userId) return;
-
-            try {
-                // Query for requests where the current user is the lender AND the status is pending
-                const q = query(
-                    getLoanRequestCollectionRef(),
-                    where('lenderId', '==', userId),
-                    where('status', '==', 'pending')
-                );
-
-                onSnapshot(q, (snapshot) => {
-                    const requests = [];
-                    snapshot.forEach((doc) => {
-                        requests.push({ id: doc.id, ...doc.data() });
+                    currencies.forEach(currency => {
+                        const option1 = new Option(currency, currency);
+                        const option2 = new Option(currency, currency);
+                        fromSelect.add(option1);
+                        toSelect.add(option2);
                     });
-                    renderLoanRequests(requests);
-                }, (error) => {
-                    console.error("Loan Request Snapshot listener failed: ", error);
-                });
-            } catch (error) {
-                console.error("Error setting up loan request listener:", error);
-            }
-        }
-        
-        function renderLoanRequests(requests) {
-            pendingRequestsList.innerHTML = '';
-            
-            if (requests.length === 0) {
-                noRequestsState.classList.remove('hidden');
-                pendingRequestsList.appendChild(noRequestsState);
-                return;
-            }
-            noRequestsState.classList.add('hidden');
 
-            requests.forEach(req => {
-                const reqDiv = document.createElement('div');
-                reqDiv.className = 'p-3 bg-white border border-indigo-200 rounded-lg shadow-sm';
+                    // Set default values
+                    fromSelect.value = 'USD';
+                    toSelect.value = 'EUR';
+
+                } catch (error) {
+                    console.error('Error fetching currencies:', error);
+                    showError('Could not load currencies. Please refresh.');
+                }
+            }
+
+            /**
+             * Handles the currency conversion.
+             */
+            async function handleConversion(event) {
+                event.preventDefault(); // Prevent form submission
                 
-                // Short Requester ID for display
-                const requesterShortId = req.requesterId.substring(0, 8);
-                
-                reqDiv.innerHTML = `
-                    <p class="font-semibold text-gray-900">${req.itemName}</p>
-                    <p class="text-sm text-gray-600 mb-2">Requested by: <span class="font-mono text-xs">${requesterShortId}...</span> for <span class="font-semibold text-blue-600">${req.requestedDays} days</span>.</p>
-                    <div class="flex space-x-2">
-                        <button onclick="handleLoanAction('${req.id}', 'approved')" 
-                            class="flex-1 bg-green-500 text-white text-xs px-3 py-1 rounded-full font-semibold hover:bg-green-600 transition">
-                            Approve
-                        </button>
-                        <button onclick="handleLoanAction('${req.id}', 'rejected')" 
-                            class="flex-1 bg-red-500 text-white text-xs px-3 py-1 rounded-full font-semibold hover:bg-red-600 transition">
-                            Reject
-                        </button>
-                    </div>
-                `;
-                pendingRequestsList.appendChild(reqDiv);
-            });
-        }
-        
-        window.handleLoanAction = async function(requestId, action) {
-            if (!isAuthReady) {
-                showStatus("App not ready.", true);
-                return;
-            }
-            
-            try {
-                const requestRef = doc(getLoanRequestCollectionRef(), requestId);
-                await updateDoc(requestRef, {
-                    status: action,
-                    handledAt: serverTimestamp()
-                });
-                
-                // NOTE: For a complete app, if 'approved', we would also update the resource's 'isAvailable' status here.
-                showStatus(`Loan Request ${requestId.substring(0, 8)}... has been ${action}.`, false);
+                const amount = parseFloat(amountInput.value);
+                const fromCurrency = fromSelect.value;
+                const toCurrency = toSelect.value;
 
-            } catch (error) {
-                console.error(`Error handling action ${action} for request ${requestId}:`, error);
-                showStatus(`Error processing request: ${error.message}`, true);
-            }
-        }
-
-
-        // 6. Load Resources Function (Real-Time Subscription)
-        function loadResources() {
-            if (!isAuthReady) return;
-
-            try {
-                const q = query(getResourceCollectionRef());
-
-                onSnapshot(q, (snapshot) => {
-                    const resources = [];
-                    snapshot.forEach((doc) => {
-                        resources.push({ id: doc.id, ...doc.data() });
-                    });
-                    renderResources(resources);
-                }, (error) => {
-                    console.error("Snapshot listener failed: ", error);
-                    showStatus(`Failed to load resources: ${error.message}`, true);
-                });
-
-            } catch (error) {
-                console.error("Error setting up snapshot listener:", error);
-                showStatus("Error accessing resource data.", true);
-            }
-        }
-
-        // 7. Render Resources to the UI
-        function renderResources(resources) {
-            resourcesList.innerHTML = '';
-
-            if (resources.length === 0) {
-                emptyState.classList.remove('hidden');
-                resourcesList.appendChild(emptyState);
-                return;
-            }
-            emptyState.classList.add('hidden');
-
-            resources.forEach(resource => {
-                const itemDiv = document.createElement('div');
-                const isMine = resource.lenderId === userId;
-                
-                itemDiv.className = `p-4 rounded-xl shadow-md transition duration-200 ${isMine ? 'bg-indigo-50 border-l-4 border-indigo-500' : 'bg-white border-l-4 border-loop-green'}`;
-                
-                // Determine button action based on availability and ownership
-                let buttonHtml;
-                if (!resource.isAvailable) {
-                     buttonHtml = `<span class="bg-red-500 text-white px-3 py-1 rounded-full font-semibold">Unavailable</span>`;
-                } else if (isMine) {
-                    buttonHtml = `<span class="bg-gray-500 text-white px-3 py-1 rounded-full font-semibold">Manage Item</span>`;
-                } else {
-                    buttonHtml = `<button 
-                        onclick="openRequestModal('${resource.id}', '${resource.itemName.replace(/'/g, "\\'")}', '${resource.lenderId}', ${resource.loanDuration})"
-                        class="bg-blue-500 text-white px-3 py-1 rounded-full font-semibold hover:bg-blue-600 transition">
-                        Request Loan
-                    </button>`;
+                if (isNaN(amount) || amount <= 0) {
+                    showError('Please enter a valid amount.');
+                    return;
                 }
 
-                itemDiv.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="text-xl font-bold ${isMine ? 'text-indigo-800' : 'text-gray-900'}">${resource.itemName}</h3>
-                        <span class="text-sm font-semibold text-gray-500">${resource.loanDuration} Days Max</span>
-                    </div>
-                    <p class="text-gray-700 text-sm mb-3">${resource.itemDescription}</p>
-                    <div class="flex justify-between items-center text-xs text-gray-500">
-                        <span>Lender: <span class="font-mono ${isMine ? 'text-indigo-600' : 'text-loop-green'}">${isMine ? 'You' : resource.lenderShortId + '...'}</span></span>
-                        ${buttonHtml}
-                    </div>
-                `;
-                resourcesList.appendChild(itemDiv);
-            });
-        }
+                if (!fromCurrency || !toCurrency) {
+                    showError('Please select both currencies.');
+                    return;
+                }
 
-        // Start the application
-        window.onload = initFirebase;
+                // Show loading state
+                setLoading(true);
+                clearMessages();
+
+                try {
+                    // Fetch rates based on the 'from' currency
+                    const response = await fetch(`${API_URL}?base=${fromCurrency}&symbols=${toCurrency}`);
+                    if (!response.ok) throw new Error('Failed to fetch exchange rate (Network error).');
+
+                    const data = await response.json();
+
+                    // Add a check for the API's own success flag
+                    if (data.success === false) {
+                        throw new Error(data.error?.message || 'API returned an error.');
+                    }
+                    
+                    if (!data.rates || !data.rates[toCurrency]) {
+                        throw new Error('Invalid currency data received.');
+                    }
+
+                    const rate = data.rates[toCurrency];
+                    const convertedAmount = (amount * rate).toFixed(2);
+
+                    // Display the result
+                    resultMessage.textContent = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+                    
+                    // Display timestamp
+                    const date = new Date(data.date);
+                    lastUpdatedElement.textContent = `Rates updated: ${date.toLocaleString()}`;
+
+                } catch (error) {
+                    console.error('Error during conversion:', error);
+                    // Display the specific API error message if available
+                    showError(error.message || 'Conversion failed. Please try again.');
+                } finally {
+                    // Hide loading state
+                    setLoading(false);
+                }
+            }
+
+            /**
+             * Swaps the 'from' and 'to' currencies.
+             */
+            function swapCurrencies() {
+                const tempCurrency = fromSelect.value;
+                fromSelect.value = toSelect.value;
+                toSelect.value = tempCurrency;
+            }
+
+            /**
+             * Sets the loading state for the convert button.
+             */
+            function setLoading(isLoading) {
+                if (isLoading) {
+                    buttonText.classList.add('hidden');
+                    loadingSpinner.classList.remove('hidden');
+                    convertButton.disabled = true;
+                } else {
+                    buttonText.classList.remove('hidden');
+                    loadingSpinner.classList.add('hidden');
+                    convertButton.disabled = false;
+                }
+            }
+
+            /**
+             * Displays an error message.
+             */
+            function showError(message) {
+                clearMessages();
+                errorMessage.textContent = message;
+            }
+
+            /**
+             * Clears all result and error messages.
+             */
+            function clearMessages() {
+                resultMessage.textContent = '';
+                errorMessage.textContent = '';
+            }
+
+            // --- Event Listeners ---
+            converterForm.addEventListener('submit', handleConversion);
+            swapButton.addEventListener('click', swapCurrencies);
+            
+            // Clear messages when user changes inputs
+            amountInput.addEventListener('input', clearMessages);
+            fromSelect.addEventListener('change', clearMessages);
+            toSelect.addEventListener('change', clearMessages);
+
+            // Initial load
+            fetchAndPopulateCurrencies();
+        });
     </script>
 </body>
 </html>
