@@ -1,288 +1,248 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Currency Converter</title>
-    <!-- Load Tailwind CSS from CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Inter font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* Use Inter as the default font */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Simple spinner for loading state */
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #4f46e5;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fun Currency Converter (Kids Theme) — Fixed Layout</title>
+  <meta name="description" content="A playful, colorful currency converter for kids with big text and gentle animations. Live rates via frankfurter.app (no API key). Fixed layout so selects never hide." />
+  <style>
+    :root{
+      --pink:#ff5db1;
+      --purple:#7c3aed;
+      --orange:#ff8a00;
+      --ink:#2c2c54;
+      --bg:#fff8ff;
+      --card:#ffffff;
+      --border:#ffd6f0;
+      --shadow:0 10px 24px rgba(0,0,0,.12);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{font-family:"Comic Sans MS","Comic Sans",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+    a{color:var(--purple);text-decoration:none}
+    a:hover{text-decoration:underline}
+    header{
+      background: radial-gradient(1200px 500px at 10% -10%, rgba(255,93,177,.25), transparent),
+                  radial-gradient(1200px 500px at 90% -10%, rgba(124,58,237,.25), transparent),
+                  linear-gradient(135deg, #ffd6f0, #fff0cc);
+      padding:28px 16px 40px;
+      position:relative; overflow:hidden;
+    }
+    .container{max-width:1000px;margin:0 auto;padding:0 16px}
+    nav{display:flex;gap:16px;align-items:center;justify-content:flex-end}
+    nav a{font-weight:800;font-size:1rem}
+    .hero{display:grid;gap:20px;grid-template-columns:1.2fr 1fr;align-items:center;margin-top:10px}
+    h1{font-size:clamp(2rem,6vw,3.25rem);margin:0;line-height:1.1}
+    .tag{display:inline-block;background:var(--orange);color:#002b36;padding:6px 12px;border-radius:999px;font-weight:900;letter-spacing:.5px}
+    .bubble{position:absolute;border-radius:50%;animation:floaty 12s ease-in-out infinite;opacity:.25;filter:blur(1px)}
+    .b1{width:160px;height:160px;background:var(--pink);top:-40px;left:-40px;animation-delay:0s}
+    .b2{width:220px;height:220px;background:var(--purple);top:-70px;right:-70px;animation-delay:1.5s}
+    .b3{width:120px;height:120px;background:var(--orange);bottom:-40px;left:20%;animation-delay:3s}
+    @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(12px)}}
+    .card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:4px solid var(--border); overflow: visible;}
+    .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end}
+    label{display:block;font-weight:800;margin-bottom:6px}
+    input,select,button{width:100%;padding:14px 16px;border:3px solid var(--border);border-radius:16px;font-size:18px;background:#fff}
+    input:focus,select:focus,button:focus{outline:3px dashed var(--purple);outline-offset:3px}
+    button{background:linear-gradient(90deg,var(--pink),var(--orange));color:#001219;border:none;cursor:pointer;font-weight:900;box-shadow:var(--shadow)}
+    button:hover{filter:brightness(.98)}
+    /* FIX: never overlap select and swap button */
+    .inline{display:grid; grid-template-columns: 1fr 64px; gap:10px; align-items:end;}
+    .inline .swap-btn{width:64px; min-width:64px; padding:12px 0; border-radius:12px; text-align:center;}
+    .result{margin-top:16px;font-size:1.35rem;font-weight:900}
+    .rate{color:#4b4b7b;font-size:1rem;margin-top:6px}
+    .status{margin-top:12px;font-size:1rem}
+    .ok{color:#065f46}.err{color:#b91c1c}
+    .hint{font-size:.95rem;color:#4b4b7b}
+    .ping{position:absolute;pointer-events:none;inset:0;overflow:hidden}
+    .dot{position:absolute;width:12px;height:12px;border-radius:50%;opacity:0;animation:pop 2s ease-out forwards}
+    @keyframes pop{
+      0%{transform:translate(0,0) scale(.2);opacity:1}
+      70%{opacity:.9}
+      100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:0}
+    }
+    footer{padding:20px;text-align:center;color:#4b4b7b}
+    @media (max-width:900px){.hero{grid-template-columns:1fr}}
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">
-            Currency Converter
-        </h1>
-
-        <!-- Main Form -->
-        <form id="converter-form" class="space-y-6">
-            
-            <!-- Amount -->
-            <div>
-                <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
-                <input type="number" id="amount" name="amount" value="1" min="0" step="any"
-                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                       placeholder="Enter amount"
-                       required>
-            </div>
-
-            <!-- From/To Row -->
-            <div class="flex items-center space-x-4">
-                
-                <!-- From Currency -->
-                <div class="w-2/5">
-                    <label for="from-currency" class="block text-sm font-medium text-gray-700">From</label>
-                    <select id="from-currency" name="from-currency"
-                            class="mt-1 block w-full py-3 px-4 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <!-- Options will be populated by JS -->
-                        <option value="USD">USD</option>
-                    </select>
-                </div>
-
-                <!-- Swap Button -->
-                <div class="w-1/5 flex justify-center pt-6">
-                    <button type="button" id="swap-button"
-                            class="p-2 text-gray-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-full transition-transform duration-200 hover:rotate-180">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-4 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- To Currency -->
-                <div class="w-2/5">
-                    <label for="to-currency" class="block text-sm font-medium text-gray-700">To</label>
-                    <select id="to-currency" name="to-currency"
-                            class="mt-1 block w-full py-3 px-4 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <!-- Options will be populated by JS -->
-                        <option value="EUR">EUR</option>
-                    </select>
-                </div>
-
-            </div>
-
-            <!-- Convert Button -->
-            <div>
-                <button type="submit" id="convert-button"
-                        class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out">
-                    <span id="button-text">Convert</span>
-                    <div id="loading-spinner" class="spinner hidden ml-3"></div>
-                </button>
-            </div>
-        </form>
-
-        <!-- Result Display -->
-        <div id="result-container" class="mt-6 text-center min-h-[3rem]">
-            <p id="result-message" class="text-2xl font-semibold text-gray-900"></p>
-            <p id="error-message" class="text-lg font-medium text-red-600"></p>
+<body>
+  <header>
+    <div class="bubble b1" aria-hidden="true"></div>
+    <div class="bubble b2" aria-hidden="true"></div>
+    <div class="bubble b3" aria-hidden="true"></div>
+    <div class="container">
+      <nav aria-label="Primary">
+        <a href="#converter">Converter</a>
+        <a href="#how">How it works</a>
+        <a href="#tips">Tips</a>
+      </nav>
+      <section class="hero" id="converter">
+        <div>
+          <span class="tag">Fun • Bright • Big Text</span>
+          <h1>Kids Currency Converter</h1>
+          <p class="hint">Live rates from <a href="https://www.frankfurter.app" target="_blank" rel="noopener">frankfurter.app</a> — free, no API key.</p>
         </div>
-        
-        <!-- Last Updated Timestamp -->
-        <p id="last-updated" class="text-center text-sm text-gray-500 mt-4"></p>
-
+        <div class="card" aria-label="Conversion Panel">
+          <div class="grid">
+            <div>
+              <label for="amount">Amount</label>
+              <input id="amount" type="number" min="0" step="0.01" value="10" />
+            </div>
+            <div>
+              <label for="from">From</label>
+              <select id="from"></select>
+            </div>
+            <div>
+              <label for="to">To</label>
+              <div class="inline">
+                <select id="to"></select>
+                <button id="swap" class="swap-btn" title="Swap currencies" aria-label="Swap currencies">⇄</button>
+              </div>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button id="convert">Convert</button>
+            </div>
+          </div>
+          <div class="result" id="result" aria-live="polite"></div>
+          <div class="rate" id="rate"></div>
+          <div class="status" id="status"></div>
+        </div>
+      </section>
     </div>
+    <div class="ping" aria-hidden="true" id="confetti"></div>
+  </header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const amountInput = document.getElementById('amount');
-            const fromSelect = document.getElementById('from-currency');
-            const toSelect = document.getElementById('to-currency');
-            const swapButton = document.getElementById('swap-button');
-            const converterForm = document.getElementById('converter-form');
-            const convertButton = document.getElementById('convert-button');
-            const buttonText = document.getElementById('button-text');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const resultMessage = document.getElementById('result-message');
-            const errorMessage = document.getElementById('error-message');
-            const lastUpdatedElement = document.getElementById('last-updated');
+  <main class="container">
+    <section id="how" class="card" style="margin-top:20px">
+      <h2>How it works</h2>
+      <ol>
+        <li>We load the list of currencies for the drop-downs.</li>
+        <li>When you click <em>Convert</em>, we fetch the live rate and do the math.</li>
+        <li>Swap makes the “from” and “to” flip instantly.</li>
+      </ol>
+    </section>
 
-            // Use a free API that doesn't require a key
-            const API_URL = 'https://api.exchangerate.host/latest';
+    <section id="tips" class="card" style="margin-top:16px">
+      <h2>Tips</h2>
+      <ul>
+        <li>Use whole numbers for small kids (10, 20, 50).</li>
+        <li>Try different countries and see how values change!</li>
+        <li>Same currency? The number stays the same.</li>
+      </ul>
+    </section>
+  </main>
 
-            // Store rates to avoid re-fetching for every conversion
-            let allRates = {};
+  <footer>© <span id="y"></span> Your Name — Be kind, be curious!
+    <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  </footer>
 
-            /**
-             * Fetches the list of currencies and populates the dropdowns.
-             */
-            async function fetchAndPopulateCurrencies() {
-                try {
-                    const response = await fetch(API_URL);
-                    if (!response.ok) throw new Error('Failed to fetch currency list (Network error).');
-                    
-                    const data = await response.json();
+  <script>
+    const els = {
+      amount: document.getElementById('amount'),
+      from: document.getElementById('from'),
+      to: document.getElementById('to'),
+      swap: document.getElementById('swap'),
+      convert: document.getElementById('convert'),
+      result: document.getElementById('result'),
+      rate: document.getElementById('rate'),
+      status: document.getElementById('status'),
+      confetti: document.getElementById('confetti')
+    };
+    const API = "https://api.frankfurter.app";
+    const fmt = (n, c) => new Intl.NumberFormat(undefined, { style:'currency', currency:c }).format(n);
 
-                    // Add a check for the API's own success flag
-                    if (data.success === false) {
-                        throw new Error(data.error?.message || 'API returned an error.');
-                    }
+    function burstConfetti(x, y){
+      for(let i=0;i<24;i++){
+        const d=document.createElement('div');
+        d.className='dot';
+        const angle = Math.random()*2*Math.PI;
+        const dist = 80 + Math.random()*60;
+        d.style.left = x+'px';
+        d.style.top = y+'px';
+        d.style.setProperty('--dx', Math.cos(angle)*dist+'px');
+        d.style.setProperty('--dy', Math.sin(angle)*dist+'px');
+        d.style.background = [getComputedStyle(document.documentElement).getPropertyValue('--pink'),
+                              getComputedStyle(document.documentElement).getPropertyValue('--purple'),
+                              getComputedStyle(document.documentElement).getPropertyValue('--orange')][i%3];
+        els.confetti.appendChild(d);
+        setTimeout(()=>d.remove(), 1800);
+      }
+    }
 
-                    // Add a check to ensure data.rates is a valid object
-                    if (!data.rates || typeof data.rates !== 'object') {
-                        throw new Error('Invalid data structure received from API.');
-                    }
+    async function loadCurrencies(){
+      els.status.textContent = "Loading currencies…";
+      try {
+        const res = await fetch(API + "/currencies");
+        if(!res.ok) throw new Error("Failed to load currency list");
+        const data = await res.json();
+        const codes = Object.keys(data).sort();
+        els.from.innerHTML = codes.map(c => `<option value="${c}">${c} — ${data[c]}</option>`).join('');
+        els.to.innerHTML = els.from.innerHTML;
+        els.from.value = "USD";
+        els.to.value = "EUR";
+        els.status.textContent = "Ready.";
+        els.status.className = "status ok";
+      } catch(err){
+        els.status.textContent = "Could not load currencies. Check your connection and refresh.";
+        els.status.className = "status err";
+        console.error(err);
+      }
+    }
 
-                    allRates = data.rates; // Store rates based on default (EUR)
-                    
-                    const currencies = Object.keys(allRates);
-                    
-                    // Clear placeholder options
-                    fromSelect.innerHTML = '';
-                    toSelect.innerHTML = '';
+    async function convert(){
+      const amount = parseFloat(els.amount.value || "0");
+      const from = els.from.value;
+      const to = els.to.value;
+      els.result.textContent = "";
+      els.rate.textContent = "";
+      els.status.textContent = "Fetching live rate…";
+      els.status.className = "status";
 
-                    currencies.forEach(currency => {
-                        const option1 = new Option(currency, currency);
-                        const option2 = new Option(currency, currency);
-                        fromSelect.add(option1);
-                        toSelect.add(option2);
-                    });
+      if(!amount || amount <= 0){
+        els.status.textContent = "Enter a valid amount.";
+        els.status.className = "status err";
+        return;
+      }
+      if(from === to){
+        els.result.textContent = fmt(amount, to);
+        els.rate.textContent = `1 ${from} = 1 ${to}`;
+        els.status.textContent = "Same currency.";
+        els.status.className = "status ok";
+        burstConfetti(innerWidth/2, 40);
+        return;
+      }
 
-                    // Set default values
-                    fromSelect.value = 'USD';
-                    toSelect.value = 'EUR';
+      try{
+        const url = `${API}/latest?amount=${encodeURIComponent(amount)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        const res = await fetch(url);
+        if(!res.ok) throw new Error("Rate fetch failed");
+        const data = await res.json();
+        const converted = data.rates[to];
+        els.result.textContent = `${fmt(amount, from)} → ${fmt(converted, to)}`;
+        const res2 = await fetch(`${API}/latest?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+        const data2 = await res2.json();
+        els.rate.textContent = `1 ${from} = ${data2.rates[to]} ${to}  •  Base date: ${data2.date}`;
+        els.status.textContent = "Live rate fetched.";
+        els.status.className = "status ok";
+        burstConfetti(innerWidth/2, 40);
+      }catch(err){
+        els.status.textContent = "Conversion failed. You may be offline or the API is unreachable.";
+        els.status.className = "status err";
+        console.error(err);
+      }
+    }
 
-                } catch (error) {
-                    console.error('Error fetching currencies:', error);
-                    showError('Could not load currencies. Please refresh.');
-                }
-            }
-
-            /**
-             * Handles the currency conversion.
-             */
-            async function handleConversion(event) {
-                event.preventDefault(); // Prevent form submission
-                
-                const amount = parseFloat(amountInput.value);
-                const fromCurrency = fromSelect.value;
-                const toCurrency = toSelect.value;
-
-                if (isNaN(amount) || amount <= 0) {
-                    showError('Please enter a valid amount.');
-                    return;
-                }
-
-                if (!fromCurrency || !toCurrency) {
-                    showError('Please select both currencies.');
-                    return;
-                }
-
-                // Show loading state
-                setLoading(true);
-                clearMessages();
-
-                try {
-                    // Fetch rates based on the 'from' currency
-                    const response = await fetch(`${API_URL}?base=${fromCurrency}&symbols=${toCurrency}`);
-                    if (!response.ok) throw new Error('Failed to fetch exchange rate (Network error).');
-
-                    const data = await response.json();
-
-                    // Add a check for the API's own success flag
-                    if (data.success === false) {
-                        throw new Error(data.error?.message || 'API returned an error.');
-                    }
-                    
-                    if (!data.rates || !data.rates[toCurrency]) {
-                        throw new Error('Invalid currency data received.');
-                    }
-
-                    const rate = data.rates[toCurrency];
-                    const convertedAmount = (amount * rate).toFixed(2);
-
-                    // Display the result
-                    resultMessage.textContent = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
-                    
-                    // Display timestamp
-                    const date = new Date(data.date);
-                    lastUpdatedElement.textContent = `Rates updated: ${date.toLocaleString()}`;
-
-                } catch (error) {
-                    console.error('Error during conversion:', error);
-                    // Display the specific API error message if available
-                    showError(error.message || 'Conversion failed. Please try again.');
-                } finally {
-                    // Hide loading state
-                    setLoading(false);
-                }
-            }
-
-            /**
-             * Swaps the 'from' and 'to' currencies.
-             */
-            function swapCurrencies() {
-                const tempCurrency = fromSelect.value;
-                fromSelect.value = toSelect.value;
-                toSelect.value = tempCurrency;
-            }
-
-            /**
-             * Sets the loading state for the convert button.
-             */
-            function setLoading(isLoading) {
-                if (isLoading) {
-                    buttonText.classList.add('hidden');
-                    loadingSpinner.classList.remove('hidden');
-                    convertButton.disabled = true;
-                } else {
-                    buttonText.classList.remove('hidden');
-                    loadingSpinner.classList.add('hidden');
-                    convertButton.disabled = false;
-                }
-            }
-
-            /**
-             * Displays an error message.
-             */
-            function showError(message) {
-                clearMessages();
-                errorMessage.textContent = message;
-            }
-
-            /**
-             * Clears all result and error messages.
-             */
-            function clearMessages() {
-                resultMessage.textContent = '';
-                errorMessage.textContent = '';
-            }
-
-            // --- Event Listeners ---
-            converterForm.addEventListener('submit', handleConversion);
-            swapButton.addEventListener('click', swapCurrencies);
-            
-            // Clear messages when user changes inputs
-            amountInput.addEventListener('input', clearMessages);
-            fromSelect.addEventListener('change', clearMessages);
-            toSelect.addEventListener('change', clearMessages);
-
-            // Initial load
-            fetchAndPopulateCurrencies();
-        });
-    </script>
+    els.swap.addEventListener('click', (e) => {
+      const tmp = els.from.value;
+      els.from.value = els.to.value;
+      els.to.value = tmp;
+      convert();
+      burstConfetti(e.clientX || innerWidth/2, e.clientY || 40);
+    });
+    els.convert.addEventListener('click', (e) => { convert(); burstConfetti(e.clientX || innerWidth/2, e.clientY || 40); });
+    window.addEventListener('DOMContentLoaded', loadCurrencies);
+  </script>
 </body>
 </html>
